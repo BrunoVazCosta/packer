@@ -1,0 +1,44 @@
+{
+    "builders": [
+        {
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+            ],
+            "disk_size": "10240",
+            "guest_os_type": "RedHat_64",
+            "headless": "true",
+            "http_directory": "http",
+            "iso_checksum": "659691c28a0e672558b003d223f83938f254b39875ee7559d1a4a14c79173193",
+            "iso_checksum_type": "sha256",
+            "iso_url": "file://c:/vm/CentOS-7-x86_64-Minimal-2003.iso",
+            "output_directory": "c:/VMs/Centos/provisioner",
+            "shutdown_command": "/sbin/halt -p",
+            "ssh_password": "changeme",
+            "ssh_port": 22,
+            "ssh_timeout": "35m",
+            "ssh_username": "root",
+            "type": "virtualbox-iso",
+            "vboxmanage": [
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--memory",
+                    "4096"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--cpus",
+                    "1"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--audio",
+                    "none"
+                ]
+            ],
+            "vm_name": "provisioner"
+        }
+    ]
+}
