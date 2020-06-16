@@ -1,3 +1,3 @@
 # packer
 
-Packer.io (https://www.packer.io/) needed
+[Packer.io](https://www.packer.io/) needed
