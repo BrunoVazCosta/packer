@@ -4,14 +4,14 @@
             "boot_command": [
                 "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
             ],
-            "disk_size": "10240",
+            "disk_size": "35840",
             "guest_os_type": "RedHat_64",
             "headless": "true",
             "http_directory": "http",
             "iso_checksum": "659691c28a0e672558b003d223f83938f254b39875ee7559d1a4a14c79173193",
             "iso_checksum_type": "sha256",
             "iso_url": "file://c:/vm/CentOS-7-x86_64-Minimal-2003.iso",
-            "output_directory": "c:/VMs/Centos/provisioner",
+            "output_directory": "c:/VMs/Centos/node0",
             "shutdown_command": "/sbin/halt -p",
             "ssh_password": "changeme",
             "ssh_port": 22,
@@ -23,13 +23,13 @@
                     "modifyvm",
                     "{{.Name}}",
                     "--memory",
-                    "4096"
+                    "6144"
                 ],
                 [
                     "modifyvm",
                     "{{.Name}}",
                     "--cpus",
-                    "1"
+                    "2"
                 ],
                 [
                     "modifyvm",
@@ -38,7 +38,32 @@
                     "none"
                 ]
             ],
-            "vm_name": "provisioner"
+            "vm_name": "node0"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "sleep 10",
+                "sudo usermod -a -G wheel admin && echo 'admin ALL=(ALL)       ALL' >> /etc/sudoers",
+                "sudo yum install -y net-tools",
+                "sudo yum install -y wget",
+                "sudo yum -y update",
+                "sudo yum install -y yum-utils device-mapper-persistent-data lvm2",
+                "sudo yum install -y httpd",
+                "sudo yum install -y epel-release",
+                "sudo wget -P /etc/yum.repos.d http://download.virtualbox.org/virtualbox/rpm/rhel/virtualbox.repo",
+                "sudo yum install -y VirtualBox-6.0",
+                "sudo usermod -a -G vboxusers admin",
+                "sudo yum install -y snapd",
+                "systemctl enable --now snapd.socket",
+                "ln -s /var/lib/snapd/snap /snap",
+                "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
+                "sudo yum install -y docker-ce docker-ce-cli containerd.io",
+                "sudo systemctl start docker",
+                "sudo usermod -a -G docker admin && newgrp docker"
+            ]
         }
     ]
 }
