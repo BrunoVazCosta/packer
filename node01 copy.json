@@ -1,0 +1,81 @@
+{
+    "builders": [
+        {
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+            ],
+            "disk_size": "102400",
+            "guest_os_type": "RedHat_64",
+            "headless": "true",
+            "http_directory": "http",
+            "iso_checksum": "sha256:659691c28a0e672558b003d223f83938f254b39875ee7559d1a4a14c79173193",
+            "iso_url": "file://c:/VMs/ISO/CentOS-7-x86_64-Minimal-2003.iso",
+            "output_directory": "c:/VMs/Centos/{{user `host_name`}}",
+            "shutdown_command": "/sbin/halt -p",
+            "ssh_password": "changeme",
+            "ssh_port": 22,
+            "ssh_timeout": "35m",
+            "ssh_username": "root",
+            "type": "virtualbox-iso",
+            "vboxmanage": [
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--memory",
+                    "2560"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--cpus",
+                    "2"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--audio",
+                    "none"
+                ]
+            ],
+            "vm_name": "{{user `host_name`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "inline": [
+                "sudo hostnamectl set-hostname {{ user `host_name` }}",
+                "sudo usermod -a -G wheel {{user `vm_user`}} \u0026\u0026 echo '{{user `vm_user`}} ALL=(ALL) ALL' >> /etc/sudoers",
+                "echo -e 'TYPE=Ethernet \nDEVICE=enp0s3 \nBOOTPROTO=static \nONBOOT=yes \nIPADDR={{ user `ip`}} \nNETMASK=255.255.255.0 \nNETWORK=192.168.0.1' >> /etc/sysconfig/network-scripts/ifcfg-enp0s3",
+                "sudo yum -y update",
+                "echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.d/ip_forward.conf",
+                "sudo yum install -y net-tools",
+                "sudo yum install -y wget",
+                "sudo yum install -y yum-utils device-mapper-persistent-data lvm2",
+                "timeout 300 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
+                "timeout 300 sudo yum install -y docker-ce docker-ce-cli containerd.io",
+                "sudo systemctl enable docker",
+                "sudo usermod -a -G docker {{user `vm_user`}} \u0026\u0026 newgrp docker",
+                "sudo systemctl start docker",
+                "sudo docker run --name cass1 -p 9042:9042 -e CASSANDRA_CLUSTER_NAME=CassCluster -e CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch -e CASSANDRA_DC=DC1 -d cassandra:2.2.12",
+                "curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE='644' INSTALL_K3S_VERSION='v1.20.4+k3s1' sh -",
+                "sleep 30",
+                "curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash",
+                "helm repo add rancher-stable https://releases.rancher.com/server-charts/stable",
+                "kubectl create namespace cattle-system",
+                "kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.crds.yaml",
+                "kubectl create namespace cert-manager",
+                "helm repo add jetstack https://charts.jetstack.io",
+                "helm repo update",
+                "helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.1.0 --kubeconfig /etc/rancher/k3s/k3s.yaml",
+                "sleep 30",
+                "helm install rancher rancher-stable/rancher --namespace cattle-system --set hostname={{user `host_name`}} --kubeconfig /etc/rancher/k3s/k3s.yaml"
+            ],
+            "type": "shell"
+        }
+    ],
+    "variables": {
+        "host_name": "node01",
+        "ip": "192.168.0.21",
+        "vm_user": "admin"
+    }
+}

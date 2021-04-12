@@ -1,0 +1,63 @@
+{
+    "builders": [
+        {
+            "boot_command": [
+                "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks.cfg<enter><wait>"
+            ],
+            "disk_size": "25600",
+            "guest_os_type": "RedHat_64",
+            "headless": "true",
+            "http_directory": "http",
+            "iso_checksum": "sha256:659691c28a0e672558b003d223f83938f254b39875ee7559d1a4a14c79173193",
+            "iso_url": "file://c:/VMs/ISO/CentOS-7-x86_64-Minimal-2003.iso",
+            "output_directory": "c:/VMs/Centos/{{user `host_name`}}",
+            "shutdown_command": "/sbin/halt -p",
+            "ssh_password": "changeme",
+            "ssh_port": 22,
+            "ssh_timeout": "35m",
+            "ssh_username": "root",
+            "type": "virtualbox-iso",
+            "vboxmanage": [
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--memory",
+                    "1280"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--cpus",
+                    "2"
+                ],
+                [
+                    "modifyvm",
+                    "{{.Name}}",
+                    "--audio",
+                    "none"
+                ]
+            ],
+            "vm_name": "{{user `host_name`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "inline": [
+                "sudo hostnamectl set-hostname {{ user `host_name` }}",
+                "sudo usermod -a -G wheel {{user `vm_user`}} \u0026\u0026 echo '{{user `vm_user`}} ALL=(ALL) ALL' >> /etc/sudoers",
+                "echo -e 'TYPE=Ethernet \nDEVICE=enp0s3 \nBOOTPROTO=static \nONBOOT=yes \nIPADDR={{ user `ip`}} \nNETMASK=255.255.255.0 \nGATEWAY=192.168.0.1' >> /etc/sysconfig/network-scripts/ifcfg-enp0s3",
+                "sudo yum -y update",
+                "echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.d/ip_forward.conf",
+                "sudo yum install -y net-tools",
+                "sudo yum install -y wget",
+                "sudo yum install -y yum-utils device-mapper-persistent-data lvm2"
+            ],
+            "type": "shell"
+        }
+    ],
+    "variables": {
+        "host_name": "node02",
+        "ip": "192.168.0.22",
+        "vm_user": "admin"
+    }
+}
